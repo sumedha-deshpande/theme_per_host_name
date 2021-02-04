@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * @file
+ * Database schema of table "hostname_theme_mappping. 
+ * This file will take care of creation and dropping of database table,
+ * during module installation and uninstallation process.
+ * 
+ * @author iAssure International Technologies Pvt Ltd, Pune
+ *  
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function theme_per_hostname_schema() {
+  $schema['hostname_theme_mapping'] = array(
+    'description' => t('Stores hostname and theme mapping.'),
+    'fields' => array(
+      'tid' => array(
+        'description' => 'The primary identifier for a type.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'hostname' => array(
+        'description' => 'The hostname.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''),
+      'themename' => array(
+        'description' => 'The themename.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''),
+      ),
+    'primary key' => array('tid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function theme_per_hostname_install() {
+  //TODO:  write logic to check if table esists then drop it and recreate it .
+  if (db_table_exists('hostname_theme_mapping') == FALSE) {
+    drupal_install_schema('theme_per_hostname');
+  }  
+  //drupal_set_message(t('Table successfully created.'));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function theme_per_hostname_uninstall() {
+  
+  // Remove schema
+  drupal_uninstall_schema('theme_per_hostname');
+  //drupal_set_message(t('Table successfully dropped.'));
+  cache_clear_all();
+}

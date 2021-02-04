@@ -1,0 +1,12 @@
+name = "Theme Per Hostname"
+description = "Switches theme per hostname."
+core = 7.x-3.4
+package = Theme per hostname
+configure = admin/config/user-interface/user_theme/settings
+
+
+; Information added by iAssure International Technologies Pvt Ltd, Pune
+version = "7.x"
+core = "7.x"
+project = "theme_per_hostname"
+datestamp = "21-10-2015"

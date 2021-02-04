@@ -1,0 +1,137 @@
+<?php
+
+/**
+ * @file
+ * theme_per_hostname is theme-switching module for configured hostnames.
+ *
+ * @author iAssure International Technologies Pvt Ltd, Pune
+ *  
+ */
+
+/**
+ * Implements hook_menu().
+ * @return string
+ */
+function theme_per_hostname_menu() {
+
+  $items = array();
+
+  $items['admin/config/jolokia'] = array(
+    'title' => 'Jolokia',
+    'description' => 'Configure Jolokia settings.',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer hostname-theme mapping'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items['admin/config/jolokia/theme_settings'] = array(
+    'title' => 'Theme Setting',
+    'description' => 'Setup theme per host name.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('theme_setup_form'),
+    'access arguments' => array('administer hostname-theme mapping'),
+    'file' => 'theme_per_hostname_admin.inc',
+    'file path' => drupal_get_path('module', 'theme_per_hostname'),
+  );
+
+  //Tabpage for configuration entry.
+  $items['admin/config/jolokia/theme_settings/Entry'] = array(
+    'title' => 'Entry',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10
+  );
+
+  //Tabpage for theme-hostname mapping.
+  $items['admin/config/jolokia/theme_settings/listing'] = array(
+    'title' => 'Listing',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('theme_setup_listing_form'),
+    'access arguments' => array('administer hostname-theme mapping'),
+    'file' => 'theme_per_hostname_admin.inc',
+    'file path' => drupal_get_path('module', 'theme_per_hostname'),
+  );
+
+  //Delete record with confirmation
+  $items['admin/config/jolokia/record/delete'] = array(
+    'title' => 'You are Deleting a Record!',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('administer hostname-theme mapping'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('record_delete_confirm'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function theme_per_hostname_permission() {
+  return array(
+    'administer hostname-theme mapping' => array(
+      'title' => t('Administer hostname mapping with theme.'),
+      'description' => t('This permission will allow the user to set the Hostname-Theme mapping.'),
+    ),
+  );
+}
+
+/**
+ * 
+ * @param type $form
+ * @param type $form_state
+ * @return type
+ */
+function record_delete_confirm($form, &$form_state) {
+
+  return confirm_form($form, t('Are you sure you want to delete this record?'), 
+      isset($_GET['destination']) ? $_GET['destination'] : "admin/config/jolokia/theme_settings/listing", 
+      t('This action will be irreversible!'), 
+      t('Delete'), 
+      t('Cancel')
+  );
+}
+
+/**
+ * 
+ * @param type $form
+ * @param type $form_values
+ */
+function record_delete_confirm_submit($form, $form_values) {
+  try {
+    if (arg(4) == "delete") {
+      $rec_deleted = db_delete('hostname_theme_mapping')
+          ->condition('tid', arg(5))
+          ->execute();
+      if ($rec_deleted) {
+        drupal_set_message(t("Record deleted successfully."));
+      }
+    }
+  }
+  catch (Exception $ex) {
+    drupal_set_message(t('Error: %message', array('%message' => $ex->getMessage())), 'error');
+  }
+  drupal_goto('admin/config/jolokia/theme_settings/listing');
+}
+
+/**
+ *  Implements hook_custom_theme().
+ * This function takes care of changing theme as per the hostname changes.
+ *  @return string
+ */
+function theme_per_hostname_custom_theme() {
+
+  $hostname = filter_input(INPUT_SERVER, 'SERVER_NAME', FILTER_SANITIZE_STRING);
+
+  $result = db_select('hostname_theme_mapping', 'h')
+      ->fields('h')
+      ->condition('hostname', db_like($hostname) . '%', 'LIKE')
+      ->execute()
+      ->fetchAll();
+
+  if ($result) {
+    return $result[0]->themename;
+  }
+  variable_get('theme_default');
+}
